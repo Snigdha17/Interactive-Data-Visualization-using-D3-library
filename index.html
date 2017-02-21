@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Visualization Lab 1</title>
+    <script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
+    <style type="text/css">
+
+.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+
+#opts{
+    font-size: 20px;
+    color: "red";
+    position: absolute;
+    top: 450px;
+    right: 560px;
+
+
+}
+#tooltip {
+    position: absolute;
+    width: 200px;
+    height: auto;
+    padding: 10px;
+    background-color: white;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    border-radius: 10px;
+    -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+    -mox-box-shadow: 4px 4px 4px 10px rgba(0, 0, 0, 0.4);
+    box-shadow: 4px 4px 10px rbga(0, 0, 0, 0.4) pointer-events: none;
+}
+#tooltip.hidden {
+    opacity: 0;
+}
+#tooltip p {
+    margin: 0;
+    font-family: sans-serif;
+    font-size: 16px;
+    line-height: 20px;
+}
+#sliderContainer{
+    text-align: center;
+    position: absolute;
+    top: 350px;
+    right: 560px;
+
+}
+.axis path,
+.axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
+
+#fdirected{
+    position: absolute;
+    right: 60px;
+    top: 80px;
+}
+.button{
+  background-color: #4CAF50;
+}
+    </style>
+    <script src="d3/d3-tip.js"></script>
+    <script src="histogram.js"></script>
+    <script src ="piechart.js"></script>
+    <script src = "forceDirected.js"></script>
+    </head>
+    <body>
+    <h1> Representation of statistics of baseball players</h1>
+    <div id = "fdirected" display = 'none'>
+    <button id = "forcedirected" style="background-color:lightblue" onclick="(activateForcedirected(50))" type="button">Click to activate Force Directed Graph</button>
+    </div>
+    <div id  = "bar"></div>
+    <div id  = "chart"></div>
+    <div id="tooltip" class="hidden">
+    <p><span id="value">100</span>%</p>
+    </div>
+
+   <div id="sliderContainer">
+    <p>
+  <label for="bincount"
+         style="display: inline-block; width: 240px; text-align: right">
+         Bins = <span id="bincount_value">…</span>
+  </label>
+  <input type="range" min="2" max="10" id="bincount">
+</p>
+</div>
+
+
+    <script type="text/javascript">
+    var margin = {top: 10, right: 20, bottom: 70, left: 20},
+            w = 500 //- margin.left - margin.right,
+            h = 630 // - margin.top - margin.bottom;
+    var binCount = 5;
+    //console.log(typeof(binCount));
+    var flag = 0;
+    var currflag = 0;
+    var barPadding = 10;
+
+    var x = d3.scale.linear().range([0, w]),
+        y = d3.scale.linear().range([h, 0]);
+
+      var name = [];
+      var handedness = [];
+      var height = [];
+      var weight = [];
+      var avg = [];
+      var HR = []
+
+    d3.select("#bincount").on("input", function() {
+        update(+this.value);
+    });
+
+
+        d3.csv("baseball_data.csv", function(data){
+
+            data.forEach(function(d) {
+                    height.push(+d.height);
+                    weight.push(+d.weight);
+                    avg.push(+d.avg);
+                    HR.push(+d.HR);
+  });
+                    update(5);
+            //refillDataHistogram(height,binCount);
+                });
+
+      function choosevar(value){
+
+        if(value == "height") refillDataHistogram(height,binCount);
+        if(value == "weight") refillDataHistogram(weight,binCount);
+        if(value == "avg") refillDataHistogram(avg,binCount);
+        if(value == "HR") refillDataHistogram(HR,binCount);
+      }
+
+      function refillDataHistogram(array, bin){
+        //console.log(array);
+        var max = d3.max(array);
+        //console.log(max);
+        var min = d3.min(array);
+        //console.log(min);
+        var widthBin = (d3.max(array) - d3.min(array))/bin;
+        dataS = new Array(bin+2).join('0').split('');
+        array.forEach(function(d){
+          dataS[Math.floor((d - d3.min(array))/widthBin)]++;
+        })
+
+        if(flag == 0){
+
+          document.getElementById("bar").innerHTML = '';
+          createHistogram(dataS, array);
+        }
+        else{
+          document.getElementById("chart").innerHTML = '';
+          createPieChart(dataS, array);
+        }
+
+      }
+
+      //activateBinWidth();
+      //activateForcedirected(50);
+function update(bincount) {
+
+ d3.select("#bincount_value").text(bincount + 1);
+  d3.select("#bincount").property("value", bincount);
+  //console.log(typeof(bincount));
+  binCount = bincount;
+  var abc = document.getElementById("opts").value;
+
+  if(abc == "weight"){
+  refillDataHistogram(weight,binCount);
+  }
+  if(abc == "height"){
+  refillDataHistogram(height,binCount);
+  }
+  if(abc == "avg"){
+  refillDataHistogram(avg,binCount);
+  }
+  if(abc == "HR"){
+  refillDataHistogram(HR,binCount);
+  }
+}
+
+
+
+
+
+
+
+
+        </script>
+        <select id = "opts" onchange = "choosevar(this.value);">
+    <option value="height">Height</option>
+    <option value="weight">Weight</option>
+    <option value = "avg">Batting Average</option>
+    <option value = "HR">Home Runs</option>
+    </select>
+    </body>
+</html>
